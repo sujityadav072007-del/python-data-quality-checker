@@ -22,7 +22,21 @@ def parse_column_values(values, option_name):
 
 def parse_date_column_formats(values):
     """Convert COLUMN=FORMAT arguments into a dictionary."""
-    return parse_column_values(values, "date-column")
+    parsed = {}
+    for item in values:
+        if "=" not in item:
+            raise ValueError(
+                f"Invalid date-column setting '{item}'. Use COLUMN=FORMAT."
+            )
+        column, date_format = item.split("=", 1)
+        if not column or not date_format:
+            raise ValueError(
+                f"Invalid date-column setting '{item}'. Use COLUMN=FORMAT."
+            )
+        if column in parsed:
+            raise ValueError(f"date-column specified more than once for '{column}'.")
+        parsed[column] = date_format
+    return parsed
 
 
 def parse_numeric_ranges(values):

@@ -8,7 +8,8 @@ A beginner-friendly command-line project that checks a CSV file for common data-
 - Counts missing values in each column. Empty cells and cells containing only spaces are treated as missing.
 - Counts duplicate rows (the first occurrence is not counted as a duplicate).
 - Optionally checks selected columns for numeric values.
-- Reports non-empty values that cannot be converted to numbers.
+- Optionally checks selected date columns against a specified date format.
+- Reports invalid non-empty numeric and date values separately from missing values.
 - Prints a readable report in the terminal.
 - Includes automated tests using Python's built-in `unittest` module.
 
@@ -25,16 +26,28 @@ Basic analysis:
 python main.py sample_data.csv
 ```
 
-To check that the `age` column contains numeric values:
+Check that the `age` column contains numeric values:
 
 ```bash
 python main.py sample_data.csv --numeric-columns age
 ```
 
-You can check more than one numeric column:
+Check a date column using year-month-day format:
 
 ```bash
-python main.py customers.csv --numeric-columns age salary
+python main.py customers.csv --date-columns joined=%Y-%m-%d
+```
+
+Check multiple date columns with different formats:
+
+```bash
+python main.py customers.csv --date-columns joined=%Y-%m-%d birth_date=%d/%m/%Y
+```
+
+You can combine numeric and date checks:
+
+```bash
+python main.py customers.csv --numeric-columns age --date-columns joined=%Y-%m-%d
 ```
 
 On some systems, use `python3` instead of `python`.
@@ -47,7 +60,7 @@ python -m unittest discover -s tests -v
 
 ## Example dataset
 
-The included `sample_data.csv` intentionally contains a missing age, a missing city, and one repeated row so you can see the checker report issues. Try adding `--numeric-columns age` to check the age column.
+The included `sample_data.csv` intentionally contains a missing age, a missing city, and one repeated row. Try the numeric check with `--numeric-columns age`.
 
 ## Project structure
 
@@ -63,18 +76,19 @@ python-data-quality-checker/
 
 ## Current limitations
 
-- Numeric validation must be requested explicitly for each column.
+- Numeric and date validation must be requested explicitly for each column.
 - Numeric validation accepts values understood by Python's `float()`, including decimal and scientific notation.
-- It does not yet validate dates, ranges, or custom business rules.
+- Date validation uses Python's `datetime.strptime()` and the format supplied for each column.
+- It does not yet validate numeric ranges or custom business rules.
 - It reads the CSV file into memory while checking for duplicate rows, so very large files may need a more memory-efficient approach.
 
 ## Planned improvements
 
-1. Add date and range validation.
+1. Add configurable numeric minimum and maximum ranges.
 2. Export the report to a file.
 3. Improve command-line options and error messages.
 4. Add more test cases and documentation.
 
 ## Learning note
 
-This project uses Python's standard-library modules: `csv`, `argparse`, `pathlib`, and `unittest`. The goal is to keep the first version small, understandable, and easy to extend.
+This project uses Python's standard-library modules: `csv`, `argparse`, `pathlib`, `datetime`, and `unittest`. The goal is to keep the first version small, understandable, and easy to extend.

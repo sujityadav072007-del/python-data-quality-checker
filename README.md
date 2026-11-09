@@ -99,3 +99,7 @@ The report includes the input file name, total row and column counts, duplicate-
 ## Concepts demonstrated
 
 Python functions, dictionaries, sets, loops, exception handling, file handling, CSV processing, command-line arguments, JSON serialization, and unit testing.
+
+## Explaining this project
+
+See [the interview walkthrough](docs/INTERVIEW_GUIDE.md) for a concise explanation of the problem, design decisions, testing approach, limitations, and possible next improvements.

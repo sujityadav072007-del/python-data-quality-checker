@@ -3,9 +3,10 @@ import csv
 from pathlib import Path
 
 
-def analyze_csv(file_path):
+def analyze_csv(file_path, numeric_columns=None):
     """Analyze a CSV file and return basic data-quality statistics."""
     path = Path(file_path)
+    numeric_columns = set(numeric_columns or [])
 
     with path.open("r", newline="", encoding="utf-8-sig") as csv_file:
         reader = csv.DictReader(csv_file)
@@ -13,7 +14,13 @@ def analyze_csv(file_path):
             raise ValueError("The CSV file must contain a header row.")
 
         columns = reader.fieldnames
+        unknown_columns = numeric_columns.difference(columns)
+        if unknown_columns:
+            names = ", ".join(sorted(unknown_columns))
+            raise ValueError(f"Unknown numeric column(s): {names}")
+
         missing_values = {column: 0 for column in columns}
+        invalid_numeric_values = {column: 0 for column in numeric_columns}
         seen_rows = set()
         duplicate_rows = 0
         total_rows = 0
@@ -25,6 +32,11 @@ def analyze_csv(file_path):
             for column, value in zip(columns, row_values):
                 if value == "":
                     missing_values[column] += 1
+                elif column in numeric_columns:
+                    try:
+                        float(value)
+                    except ValueError:
+                        invalid_numeric_values[column] += 1
 
             if row_values in seen_rows:
                 duplicate_rows += 1
@@ -37,6 +49,7 @@ def analyze_csv(file_path):
         "total_columns": len(columns),
         "duplicate_rows": duplicate_rows,
         "missing_values": missing_values,
+        "invalid_numeric_values": invalid_numeric_values,
     }
 
 
@@ -52,16 +65,28 @@ def print_report(report):
     for column, count in report["missing_values"].items():
         print(f"  {column}: {count}")
 
+    if report["invalid_numeric_values"]:
+        print("\nInvalid numeric values by column:")
+        for column, count in report["invalid_numeric_values"].items():
+            print(f"  {column}: {count}")
+
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Check a CSV file for missing values and duplicate rows."
+        description="Check a CSV file for missing values, duplicates, and invalid numbers."
     )
     parser.add_argument("file", help="Path to the CSV file to analyze")
+    parser.add_argument(
+        "--numeric-columns",
+        nargs="+",
+        default=[],
+        metavar="COLUMN",
+        help="Column names that should contain numeric values",
+    )
     args = parser.parse_args()
 
     try:
-        report = analyze_csv(args.file)
+        report = analyze_csv(args.file, numeric_columns=args.numeric_columns)
         print_report(report)
     except (OSError, UnicodeError, csv.Error, ValueError) as error:
         parser.error(str(error))

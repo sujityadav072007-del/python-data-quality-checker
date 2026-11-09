@@ -1,37 +1,59 @@
 import argparse
 import csv
+import json
 from datetime import datetime
 from pathlib import Path
 
 
+def parse_column_values(values, option_name):
+    """Parse repeated COLUMN=VALUE arguments."""
+    parsed = {}
+    for item in values:
+        if "=" not in item:
+            raise ValueError(f"Invalid {option_name} setting '{item}'. Use COLUMN=VALUE.")
+        column, value = item.split("=", 1)
+        if not column or not value:
+            raise ValueError(f"Invalid {option_name} setting '{item}'. Use COLUMN=VALUE.")
+        if column in parsed:
+            raise ValueError(f"{option_name} specified more than once for '{column}'.")
+        parsed[column] = value
+    return parsed
+
+
 def parse_date_column_formats(values):
     """Convert COLUMN=FORMAT arguments into a dictionary."""
-    date_formats = {}
-
-    for value in values:
-        if "=" not in value:
-            raise ValueError(
-                f"Invalid date-column setting '{value}'. Use COLUMN=FORMAT."
-            )
-
-        column, date_format = value.split("=", 1)
-        if not column or not date_format:
-            raise ValueError(
-                f"Invalid date-column setting '{value}'. Use COLUMN=FORMAT."
-            )
-        if column in date_formats:
-            raise ValueError(f"Date format specified more than once for '{column}'.")
-
-        date_formats[column] = date_format
-
-    return date_formats
+    return parse_column_values(values, "date-column")
 
 
-def analyze_csv(file_path, numeric_columns=None, date_formats=None):
+def parse_numeric_ranges(values):
+    """Convert COLUMN=MIN:MAX arguments into numeric bounds."""
+    ranges = {}
+    for item in values:
+        if "=" not in item:
+            raise ValueError(f"Invalid range setting '{item}'. Use COLUMN=MIN:MAX.")
+        column, bounds = item.split("=", 1)
+        if not column or ":" not in bounds:
+            raise ValueError(f"Invalid range setting '{item}'. Use COLUMN=MIN:MAX.")
+        minimum_text, maximum_text = bounds.split(":", 1)
+        try:
+            minimum = float(minimum_text)
+            maximum = float(maximum_text)
+        except ValueError as error:
+            raise ValueError(f"Range bounds must be numbers: '{item}'.") from error
+        if minimum > maximum:
+            raise ValueError(f"Minimum cannot exceed maximum for '{column}'.")
+        if column in ranges:
+            raise ValueError(f"Range specified more than once for '{column}'.")
+        ranges[column] = (minimum, maximum)
+    return ranges
+
+
+def analyze_csv(file_path, numeric_columns=None, date_formats=None, numeric_ranges=None):
     """Analyze a CSV file and return basic data-quality statistics."""
     path = Path(file_path)
     numeric_columns = set(numeric_columns or [])
     date_formats = date_formats or {}
+    numeric_ranges = numeric_ranges or {}
 
     with path.open("r", newline="", encoding="utf-8-sig") as csv_file:
         reader = csv.DictReader(csv_file)
@@ -39,18 +61,17 @@ def analyze_csv(file_path, numeric_columns=None, date_formats=None):
             raise ValueError("The CSV file must contain a header row.")
 
         columns = reader.fieldnames
-        unknown_numeric = numeric_columns.difference(columns)
+        configured_columns = numeric_columns | set(numeric_ranges)
+        unknown_numeric = configured_columns.difference(columns)
         unknown_dates = set(date_formats).difference(columns)
-
         if unknown_numeric:
-            names = ", ".join(sorted(unknown_numeric))
-            raise ValueError(f"Unknown numeric column(s): {names}")
+            raise ValueError("Unknown numeric column(s): " + ", ".join(sorted(unknown_numeric)))
         if unknown_dates:
-            names = ", ".join(sorted(unknown_dates))
-            raise ValueError(f"Unknown date column(s): {names}")
+            raise ValueError("Unknown date column(s): " + ", ".join(sorted(unknown_dates)))
 
         missing_values = {column: 0 for column in columns}
-        invalid_numeric_values = {column: 0 for column in numeric_columns}
+        invalid_numeric_values = {column: 0 for column in configured_columns}
+        out_of_range_values = {column: 0 for column in numeric_ranges}
         invalid_date_values = {column: 0 for column in date_formats}
         seen_rows = set()
         duplicate_rows = 0
@@ -63,12 +84,20 @@ def analyze_csv(file_path, numeric_columns=None, date_formats=None):
             for column, value in zip(columns, row_values):
                 if value == "":
                     missing_values[column] += 1
-                elif column in numeric_columns:
+                    continue
+
+                if column in configured_columns:
                     try:
-                        float(value)
+                        number = float(value)
                     except ValueError:
                         invalid_numeric_values[column] += 1
-                elif column in date_formats:
+                    else:
+                        if column in numeric_ranges:
+                            minimum, maximum = numeric_ranges[column]
+                            if not minimum <= number <= maximum:
+                                out_of_range_values[column] += 1
+
+                if column in date_formats:
                     try:
                         datetime.strptime(value, date_formats[column])
                     except ValueError:
@@ -86,8 +115,17 @@ def analyze_csv(file_path, numeric_columns=None, date_formats=None):
         "duplicate_rows": duplicate_rows,
         "missing_values": missing_values,
         "invalid_numeric_values": invalid_numeric_values,
+        "out_of_range_values": out_of_range_values,
         "invalid_date_values": invalid_date_values,
     }
+
+
+def export_json(report, output_path):
+    """Write the report as JSON."""
+    Path(output_path).write_text(
+        json.dumps(report, indent=4, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
 
 def print_report(report):
@@ -97,20 +135,18 @@ def print_report(report):
     print(f"Total rows: {report['total_rows']}")
     print(f"Total columns: {report['total_columns']}")
     print(f"Duplicate rows: {report['duplicate_rows']}")
-    print("\nMissing values by column:")
 
-    for column, count in report["missing_values"].items():
-        print(f"  {column}: {count}")
-
-    if report["invalid_numeric_values"]:
-        print("\nInvalid numeric values by column:")
-        for column, count in report["invalid_numeric_values"].items():
-            print(f"  {column}: {count}")
-
-    if report["invalid_date_values"]:
-        print("\nInvalid date values by column:")
-        for column, count in report["invalid_date_values"].items():
-            print(f"  {column}: {count}")
+    sections = [
+        ("Missing values", report["missing_values"]),
+        ("Invalid numeric values", report["invalid_numeric_values"]),
+        ("Out-of-range numeric values", report["out_of_range_values"]),
+        ("Invalid date values", report["invalid_date_values"]),
+    ]
+    for title, values in sections:
+        if values:
+            print(f"\n{title}:")
+            for column, count in values.items():
+                print(f"  {column}: {count}")
 
 
 def main():
@@ -118,30 +154,30 @@ def main():
         description="Check a CSV file for missing values, duplicates, and invalid data."
     )
     parser.add_argument("file", help="Path to the CSV file to analyze")
-    parser.add_argument(
-        "--numeric-columns",
-        nargs="+",
-        default=[],
-        metavar="COLUMN",
-        help="Column names that should contain numeric values",
-    )
-    parser.add_argument(
-        "--date-columns",
-        nargs="+",
-        default=[],
-        metavar="COLUMN=FORMAT",
-        help="Date columns and their Python date formats, e.g. joined=%Y-%m-%d",
-    )
+    parser.add_argument("--numeric-columns", nargs="+", default=[], metavar="COLUMN",
+                        help="Columns that should contain numeric values")
+    parser.add_argument("--date-columns", nargs="+", default=[], metavar="COLUMN=FORMAT",
+                        help="Date columns and formats, e.g. joined=%Y-%m-%d")
+    parser.add_argument("--range", dest="numeric_ranges", nargs="+", default=[],
+                        metavar="COLUMN=MIN:MAX",
+                        help="Allowed inclusive numeric range, e.g. age=18:60")
+    parser.add_argument("--output", metavar="FILE",
+                        help="Optional path to save the report as JSON")
     args = parser.parse_args()
 
     try:
         date_formats = parse_date_column_formats(args.date_columns)
+        numeric_ranges = parse_numeric_ranges(args.numeric_ranges)
         report = analyze_csv(
             args.file,
             numeric_columns=args.numeric_columns,
             date_formats=date_formats,
+            numeric_ranges=numeric_ranges,
         )
         print_report(report)
+        if args.output:
+            export_json(report, args.output)
+            print(f"\nJSON report saved to: {args.output}")
     except (OSError, UnicodeError, csv.Error, ValueError) as error:
         parser.error(str(error))
 

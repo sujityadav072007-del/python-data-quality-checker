@@ -1,94 +1,104 @@
 # Python Data Quality Checker
 
-A beginner-friendly command-line project that checks a CSV file for common data-quality issues.
+A command-line Python tool that checks CSV files for common data-quality issues and can save a JSON report. It uses only Python's standard library.
 
-## Current features
+## Features
 
-- Counts the number of data rows and columns.
-- Counts missing values in each column. Empty cells and cells containing only spaces are treated as missing.
-- Counts duplicate rows (the first occurrence is not counted as a duplicate).
-- Optionally checks selected columns for numeric values.
-- Optionally checks selected date columns against a specified date format.
-- Reports invalid non-empty numeric and date values separately from missing values.
-- Prints a readable report in the terminal.
-- Includes automated tests using Python's built-in `unittest` module.
+- Counts data rows and columns.
+- Counts missing values (empty and whitespace-only cells).
+- Counts duplicate rows (excluding the first occurrence).
+- Validates selected numeric columns.
+- Validates selected date columns using a specified Python date format.
+- Checks inclusive minimum and maximum ranges for numeric columns.
+- Exports the results to a JSON file.
+- Includes automated tests and a GitHub Actions test workflow.
 
 ## Requirements
 
 - Python 3.8 or newer
-- No third-party packages are required.
+- No third-party packages required.
 
-## Run the checker
+## Run examples
 
-Basic analysis:
+Basic report:
 
 ```bash
 python main.py sample_data.csv
 ```
 
-Check that the `age` column contains numeric values:
+Check numeric values:
 
 ```bash
 python main.py sample_data.csv --numeric-columns age
 ```
 
-Check a date column using year-month-day format:
+Validate dates (format is year-month-day):
 
 ```bash
 python main.py customers.csv --date-columns joined=%Y-%m-%d
 ```
 
-Check multiple date columns with different formats:
+Check numeric ranges (both endpoints are allowed):
 
 ```bash
-python main.py customers.csv --date-columns joined=%Y-%m-%d birth_date=%d/%m/%Y
+python main.py customers.csv --range age=18:60 marks=0:100
 ```
 
-You can combine numeric and date checks:
+Save the report as JSON:
 
 ```bash
-python main.py customers.csv --numeric-columns age --date-columns joined=%Y-%m-%d
+python main.py sample_data.csv --numeric-columns age --range age=18:60 --output report.json
+```
+
+Combine date, numeric, and range checks:
+
+```bash
+python main.py customers.csv --numeric-columns age --date-columns joined=%Y-%m-%d --range age=18:60 --output report.json
 ```
 
 On some systems, use `python3` instead of `python`.
 
-## Run the tests
+## Run tests locally
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-## Example dataset
+GitHub Actions also runs the test suite when changes are pushed or a pull request is opened.
 
-The included `sample_data.csv` intentionally contains a missing age, a missing city, and one repeated row. Try the numeric check with `--numeric-columns age`.
+## Sample data
+
+`sample_data.csv` includes missing values and a repeated row. Try the commands above with the sample file.
 
 ## Project structure
 
 ```text
 python-data-quality-checker/
-├── main.py
-├── sample_data.csv
+├── .github/
+│   └── workflows/
+│       └── tests.yml
 ├── tests/
 │   └── test_data_quality.py
+├── main.py
+├── sample_data.csv
 ├── .gitignore
 └── README.md
 ```
 
-## Current limitations
+## How validation is counted
 
-- Numeric and date validation must be requested explicitly for each column.
-- Numeric validation accepts values understood by Python's `float()`, including decimal and scientific notation.
-- Date validation uses Python's `datetime.strptime()` and the format supplied for each column.
-- It does not yet validate numeric ranges or custom business rules.
-- It reads the CSV file into memory while checking for duplicate rows, so very large files may need a more memory-efficient approach.
+- Missing values are counted separately from invalid values.
+- Invalid numeric values are non-empty values that Python cannot convert to a float.
+- Out-of-range values are valid numbers outside the configured inclusive range.
+- Invalid dates are non-empty values that do not match the specified date format.
+- Duplicate rows are exact matches after surrounding whitespace is stripped from each cell.
 
-## Planned improvements
+## Limitations
 
-1. Add configurable numeric minimum and maximum ranges.
-2. Export the report to a file.
-3. Improve command-line options and error messages.
-4. Add more test cases and documentation.
+- Numeric, date, and range checks must be configured by the user.
+- Date parsing follows Python's `datetime.strptime()` format rules.
+- Duplicate detection keeps previously seen rows in memory, so extremely large CSV files may need a different approach.
 
-## Learning note
+## Learning goals
 
-This project uses Python's standard-library modules: `csv`, `argparse`, `pathlib`, `datetime`, and `unittest`. The goal is to keep the first version small, understandable, and easy to extend.
+This project demonstrates Python functions, dictionaries, sets, loops, exception handling, file handling, CSV processing, command-line arguments, JSON output, and unit testing.

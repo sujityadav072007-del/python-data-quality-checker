@@ -113,6 +113,13 @@ See the [interview walkthrough](docs/INTERVIEW_GUIDE.md) for the problem stateme
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes.
 - See [SECURITY.md](SECURITY.md) for responsible vulnerability reporting.
 
+## About the Developer
+
+**Sujit Yadav** is a B.Sc. Information Technology student interested in Python development, data quality, software engineering, and research-oriented problem solving.
+
+- GitHub: https://github.com/sujityadav072007-del
+- LinkedIn: https://linkedin.com/in/sujityadav
+
 ---
 
-Built as a hands-on project to practice Python, data validation, testing, and clean project documentation.
+Built as a hands-on project to practise Python, data validation, testing, and clear technical documentation.

@@ -1,17 +1,20 @@
 # Python Data Quality Checker
 
 [![Tests](https://github.com/sujityadav072007-del/python-data-quality-checker/actions/workflows/tests.yml/badge.svg)](https://github.com/sujityadav072007-del/python-data-quality-checker/actions/workflows/tests.yml)
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Dependencies](https://img.shields.io/badge/Dependencies-None-brightgreen)
 
-A command-line tool for checking common data-quality issues in CSV files and exporting a structured JSON report. It uses Python's standard library, so no third-party packages are required.
+A Python command-line tool that checks CSV files for common data-quality problems and can export a structured JSON report. It uses Python's standard library and requires no third-party packages.
 
-## What it checks
+## Project highlights
 
-- **Missing values:** empty and whitespace-only cells.
-- **Duplicate rows:** repeated rows after surrounding cell whitespace is removed.
-- **Numeric values:** values that cannot be converted to numbers in selected columns.
-- **Date values:** values that do not match a configured Python date format.
-- **Numeric ranges:** values outside configured inclusive minimum and maximum bounds.
+- Detects empty and whitespace-only values
+- Finds duplicate rows after trimming surrounding cell whitespace
+- Validates selected numeric columns
+- Validates dates using configurable Python date formats
+- Checks numeric values against inclusive minimum and maximum ranges
+- Exports results as JSON for further use
+- Includes automated tests with unittest and a GitHub Actions workflow
 
 ## Requirements
 
@@ -20,30 +23,30 @@ A command-line tool for checking common data-quality issues in CSV files and exp
 
 ## Quick start
 
-Clone the repository and move into the project directory:
+Clone the repository and enter the project directory:
 
 ```bash
 git clone https://github.com/sujityadav072007-del/python-data-quality-checker.git
 cd python-data-quality-checker
 ```
 
-Run the checker against a CSV file:
+Run the checker:
 
 ```bash
 python main.py sample_data.csv
 ```
 
-On some systems, use `python3` instead of `python`.
+On some systems, use python3 instead of python.
 
-## Examples
+## Common examples
 
-Check whether values in the `age` column are numeric:
+Check numeric values in the age column:
 
 ```bash
 python main.py sample_data.csv --numeric-columns age
 ```
 
-Validate dates in the `joined` column using year-month-day format:
+Validate dates in the joined column using year-month-day format:
 
 ```bash
 python main.py customers.csv --date-columns joined=%Y-%m-%d
@@ -58,48 +61,58 @@ python main.py customers.csv --range age=18:60 marks=0:100
 Export a JSON report while running multiple checks:
 
 ```bash
-python main.py customers.csv --numeric-columns age --date-columns joined=%Y-%m-%d --range age=18:60 --output report.json
+python main.py sample_data.csv --numeric-columns age --range age=18:60 --output report.json
 ```
 
 ## Run the tests
-
-Run the automated test suite with:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions runs the test suite when changes are pushed or a pull request is opened. The badge at the top links to the workflow status.
+GitHub Actions runs the test suite on pushes and pull requests to the configured branch. The badge at the top links to the workflow.
 
 ## Project structure
 
 ```text
 python-data-quality-checker/
 ├── .github/
+│   ├── ISSUE_TEMPLATE/
 │   └── workflows/
-│       └── tests.yml
+├── docs/
+│   └── INTERVIEW_GUIDE.md
 ├── tests/
 │   └── test_data_quality.py
 ├── main.py
 ├── sample_data.csv
-├── .gitignore
+├── CONTRIBUTING.md
+├── SECURITY.md
 └── README.md
 ```
 
-## Report fields
+## Report contents
 
-The report includes the input file name, total row and column counts, duplicate-row count, and per-column counts for missing values, invalid numeric values, out-of-range values, and invalid dates.
+The JSON report includes the input file name, row and column counts, duplicate-row count, and per-column counts for missing values, invalid numeric values, out-of-range values, and invalid dates.
 
-## Current limitations
+## Design notes and limitations
 
-- Numeric, date, and range checks must be configured by the user.
-- Date parsing follows Python's `datetime.strptime()` format rules.
-- Duplicate detection stores previously seen rows in memory, which may not be suitable for extremely large CSV files.
+- Numeric, date, and range checks are opt-in and must be configured by the user.
+- Date parsing follows Python datetime.strptime format rules.
+- Duplicate detection keeps previously seen rows in memory, so extremely large CSV files may require a different approach.
 
 ## Concepts demonstrated
 
 Python functions, dictionaries, sets, loops, exception handling, file handling, CSV processing, command-line arguments, JSON serialization, and unit testing.
 
-## Explaining this project
+## Interview preparation
 
-See [the interview walkthrough](docs/INTERVIEW_GUIDE.md) for a concise explanation of the problem, design decisions, testing approach, limitations, and possible next improvements.
+See the [interview walkthrough](docs/INTERVIEW_GUIDE.md) for the problem statement, design decisions, testing approach, limitations, and possible future improvements.
+
+## Contributing and security
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes.
+- See [SECURITY.md](SECURITY.md) for responsible vulnerability reporting.
+
+---
+
+Built as a hands-on project to practice Python, data validation, testing, and clean project documentation.

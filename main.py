@@ -55,6 +55,8 @@ def parse_numeric_ranges(values):
             maximum = float(maximum_text)
         except ValueError as error:
             raise ValueError(f"Range bounds must be numbers: '{item}'.") from error
+        if not math.isfinite(minimum) or not math.isfinite(maximum):
+            raise ValueError(f"Range bounds must be finite numbers: '{item}'.")
         if minimum > maximum:
             raise ValueError(f"Minimum cannot exceed maximum for '{column}'.")
         if column in ranges:

@@ -127,6 +127,12 @@ class TestAnalyzeCsv(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must be numbers"):
             parse_numeric_ranges(["age=low:high"])
 
+    def test_reject_non_finite_numeric_range_bounds(self):
+        for setting in ("age=nan:60", "age=18:inf", "age=-inf:60"):
+            with self.subTest(setting=setting):
+                with self.assertRaisesRegex(ValueError, "must be finite"):
+                    parse_numeric_ranges([setting])
+
     def test_unknown_range_column_raises_error(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self.write_csv(folder, [["name"], ["Asha"]])

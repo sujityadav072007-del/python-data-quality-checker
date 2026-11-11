@@ -58,6 +58,22 @@ class TestAnalyzeCsv(unittest.TestCase):
             self.assertEqual(report["invalid_numeric_values"], {"age": 1})
             self.assertEqual(report["missing_values"]["age"], 1)
 
+    def test_non_finite_numeric_values_are_invalid(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self.write_csv(folder, [
+                ["score"],
+                ["NaN"],
+                ["Infinity"],
+                ["-Infinity"],
+                ["101"],
+                ["50"],
+                [""],
+            ])
+            report = analyze_csv(path, numeric_ranges={"score": (0, 100)})
+            self.assertEqual(report["invalid_numeric_values"], {"score": 3})
+            self.assertEqual(report["out_of_range_values"], {"score": 1})
+            self.assertEqual(report["missing_values"]["score"], 1)
+
     def test_unknown_numeric_column_raises_error(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self.write_csv(folder, [["name"], ["Asha"]])

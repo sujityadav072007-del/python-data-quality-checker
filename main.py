@@ -1,6 +1,7 @@
 import argparse
 import csv
 import json
+import math
 from datetime import datetime
 from pathlib import Path
 
@@ -106,7 +107,9 @@ def analyze_csv(file_path, numeric_columns=None, date_formats=None, numeric_rang
                     except ValueError:
                         invalid_numeric_values[column] += 1
                     else:
-                        if column in numeric_ranges:
+                        if not math.isfinite(number):
+                            invalid_numeric_values[column] += 1
+                        elif column in numeric_ranges:
                             minimum, maximum = numeric_ranges[column]
                             if not minimum <= number <= maximum:
                                 out_of_range_values[column] += 1

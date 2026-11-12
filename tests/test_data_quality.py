@@ -49,6 +49,15 @@ class TestAnalyzeCsv(unittest.TestCase):
             with self.assertRaises(ValueError):
                 analyze_csv(path)
 
+    def test_duplicate_column_names_raise_value_error(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self.write_csv(folder, [
+                ["name", "age", "age"],
+                ["Asha", "21", "22"],
+            ])
+            with self.assertRaisesRegex(ValueError, "Duplicate column name.*age"):
+                analyze_csv(path)
+
     def test_invalid_numeric_and_missing_are_separate(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self.write_csv(folder, [

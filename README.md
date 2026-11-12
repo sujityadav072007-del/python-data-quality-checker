@@ -10,6 +10,7 @@ A Python command-line tool that checks CSV files for common data-quality problem
 
 - Detects empty and whitespace-only values
 - Finds duplicate rows after trimming surrounding cell whitespace
+- Counts rows with too few or too many fields compared with the CSV header
 - Validates selected numeric columns
 - Validates dates using configurable Python date formats
 - Checks numeric values against inclusive minimum and maximum ranges
@@ -92,7 +93,7 @@ python-data-quality-checker/
 
 ## Report contents
 
-The JSON report includes the input file name, row and column counts, duplicate-row count, and per-column counts for missing values, invalid numeric values, out-of-range values, and invalid dates.
+The JSON report includes the input file name, row and column counts, duplicate-row count, malformed-row count (records with too few or too many fields), and per-column counts for missing values, invalid numeric values, out-of-range values, and invalid dates. A short row is also reflected in the missing-value count for the absent field.
 
 ## Design notes and limitations
 

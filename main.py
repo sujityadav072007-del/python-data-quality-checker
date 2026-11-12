@@ -78,6 +78,17 @@ def analyze_csv(file_path, numeric_columns=None, date_formats=None, numeric_rang
             raise ValueError("The CSV file must contain a header row.")
 
         columns = reader.fieldnames
+        seen_columns = set()
+        duplicate_columns = []
+        for column in columns:
+            if column in seen_columns and column not in duplicate_columns:
+                duplicate_columns.append(column)
+            seen_columns.add(column)
+        if duplicate_columns:
+            raise ValueError(
+                "Duplicate column name(s): " + ", ".join(duplicate_columns)
+            )
+
         configured_columns = numeric_columns | set(numeric_ranges)
         unknown_numeric = configured_columns.difference(columns)
         unknown_dates = set(date_formats).difference(columns)

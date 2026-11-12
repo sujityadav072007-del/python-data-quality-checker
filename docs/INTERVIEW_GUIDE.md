@@ -12,7 +12,7 @@ CSV files can contain blank cells, repeated records, invalid numbers, dates in u
 
 1. The command-line interface collects the CSV path and optional validation rules.
 2. The CSV reader loads the header and processes each record.
-3. The analyzer counts missing values, normalizes surrounding whitespace for duplicate detection, and applies configured numeric, date, and range checks.
+3. The analyzer checks whether each record has the same number of fields as the header, counts malformed rows and missing values, normalizes surrounding whitespace for duplicate detection, and applies configured numeric, date, and range checks.
 4. The report is returned as a Python dictionary.
 5. The CLI prints the report and optionally writes it as JSON.
 
@@ -34,6 +34,7 @@ GitHub Actions runs this command on pushes and pull requests targeting `main`.
 ## Current limitations
 
 - The full set of rows is tracked in memory for duplicate detection, so very large files may need a different strategy.
+- Rows with extra fields are flagged as malformed, but the extra values are not assigned to a named column; short rows are also reflected in missing-value counts.
 - The tool does not infer data types or validation rules automatically.
 - Date validation uses the format supplied by the user.
 - It currently analyzes one CSV file per command.

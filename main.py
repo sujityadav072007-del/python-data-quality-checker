@@ -103,10 +103,16 @@ def analyze_csv(file_path, numeric_columns=None, date_formats=None, numeric_rang
         invalid_date_values = {column: 0 for column in date_formats}
         seen_rows = set()
         duplicate_rows = 0
+        malformed_rows = 0
         total_rows = 0
 
         for row in reader:
             total_rows += 1
+            has_extra_fields = None in row
+            has_missing_fields = any(row.get(column) is None for column in columns)
+            if has_extra_fields or has_missing_fields:
+                malformed_rows += 1
+
             row_values = tuple((row.get(column) or "").strip() for column in columns)
 
             for column, value in zip(columns, row_values):
@@ -143,6 +149,7 @@ def analyze_csv(file_path, numeric_columns=None, date_formats=None, numeric_rang
         "total_rows": total_rows,
         "total_columns": len(columns),
         "duplicate_rows": duplicate_rows,
+        "malformed_rows": malformed_rows,
         "missing_values": missing_values,
         "invalid_numeric_values": invalid_numeric_values,
         "out_of_range_values": out_of_range_values,
@@ -165,6 +172,7 @@ def print_report(report):
     print(f"Total rows: {report['total_rows']}")
     print(f"Total columns: {report['total_columns']}")
     print(f"Duplicate rows: {report['duplicate_rows']}")
+    print(f"Malformed rows (wrong number of fields): {report['malformed_rows']}")
 
     sections = [
         ("Missing values", report["missing_values"]),

@@ -28,7 +28,21 @@ class TestAnalyzeCsv(unittest.TestCase):
             self.assertEqual(report["total_rows"], 3)
             self.assertEqual(report["total_columns"], 2)
             self.assertEqual(report["duplicate_rows"], 1)
+            self.assertEqual(report["malformed_rows"], 0)
             self.assertEqual(report["missing_values"], {"name": 0, "age": 1})
+
+    def test_counts_rows_with_too_few_or_too_many_fields(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self.write_csv(folder, [
+                ["name", "age"],
+                ["Asha", ""],
+                ["Ravi"],
+                ["Meera", "22", "unexpected"],
+            ])
+            report = analyze_csv(path)
+            self.assertEqual(report["total_rows"], 3)
+            self.assertEqual(report["malformed_rows"], 2)
+            self.assertEqual(report["missing_values"], {"name": 0, "age": 2})
 
     def test_whitespace_only_value_is_missing(self):
         with tempfile.TemporaryDirectory() as folder:

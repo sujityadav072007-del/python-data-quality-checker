@@ -157,6 +157,14 @@ def analyze_csv(file_path, numeric_columns=None, date_formats=None, numeric_rang
     }
 
 
+def validate_output_path(input_path, output_path):
+    """Prevent a JSON report from overwriting the source CSV file."""
+    if Path(input_path).resolve() == Path(output_path).resolve():
+        raise ValueError(
+            "JSON output path must be different from the input CSV path."
+        )
+
+
 def export_json(report, output_path):
     """Write the report as JSON."""
     Path(output_path).write_text(
@@ -204,6 +212,8 @@ def main():
     args = parser.parse_args()
 
     try:
+        if args.output:
+            validate_output_path(args.file, args.output)
         date_formats = parse_date_column_formats(args.date_columns)
         numeric_ranges = parse_numeric_ranges(args.numeric_ranges)
         report = analyze_csv(

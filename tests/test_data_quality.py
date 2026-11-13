@@ -2,11 +2,15 @@ import csv
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stderr
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 from main import (
     analyze_csv,
     export_json,
+    main,
     parse_date_column_formats,
     parse_numeric_ranges,
 )
@@ -171,6 +175,22 @@ class TestAnalyzeCsv(unittest.TestCase):
             saved = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(saved["total_rows"], 1)
             self.assertEqual(saved["file_name"], "sample.csv")
+
+
+    def test_cli_refuses_to_overwrite_input_csv(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "sample.csv"
+            original_content = "name\\nAsha\\n"
+            path.write_text(original_content, encoding="utf-8")
+
+            arguments = ["main.py", str(path), "--output", str(path)]
+            with patch("sys.argv", arguments):
+                with redirect_stderr(StringIO()):
+                    with self.assertRaises(SystemExit) as error:
+                        main()
+
+            self.assertEqual(error.exception.code, 2)
+            self.assertEqual(path.read_text(encoding="utf-8"), original_content)
 
 
 if __name__ == "__main__":

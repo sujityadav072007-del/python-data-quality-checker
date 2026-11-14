@@ -114,6 +114,10 @@ def analyze_csv(file_path, numeric_columns=None, date_formats=None, numeric_rang
                 malformed_rows += 1
 
             row_values = tuple((row.get(column) or "").strip() for column in columns)
+            extra_values = tuple(
+                (value or "").strip() for value in (row.get(None) or [])
+            )
+            duplicate_key = row_values + extra_values
 
             for column, value in zip(columns, row_values):
                 if value == "":
@@ -139,10 +143,10 @@ def analyze_csv(file_path, numeric_columns=None, date_formats=None, numeric_rang
                     except ValueError:
                         invalid_date_values[column] += 1
 
-            if row_values in seen_rows:
+            if duplicate_key in seen_rows:
                 duplicate_rows += 1
             else:
-                seen_rows.add(row_values)
+                seen_rows.add(duplicate_key)
 
     return {
         "file_name": path.name,

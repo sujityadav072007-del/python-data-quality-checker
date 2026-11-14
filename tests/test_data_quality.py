@@ -48,6 +48,18 @@ class TestAnalyzeCsv(unittest.TestCase):
             self.assertEqual(report["malformed_rows"], 2)
             self.assertEqual(report["missing_values"], {"name": 0, "age": 2})
 
+    def test_duplicate_detection_includes_extra_fields(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self.write_csv(folder, [
+                ["name", "age"],
+                ["Asha", "21", "source-a"],
+                ["Asha", "21", "source-b"],
+                ["Asha", "21", "source-a"],
+            ])
+            report = analyze_csv(path)
+            self.assertEqual(report["malformed_rows"], 3)
+            self.assertEqual(report["duplicate_rows"], 1)
+
     def test_whitespace_only_value_is_missing(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self.write_csv(folder, [["name", "city"], ["Meera", "   "]])

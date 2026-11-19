@@ -65,15 +65,18 @@ def parse_numeric_ranges(values):
     return ranges
 
 
-def analyze_csv(file_path, numeric_columns=None, date_formats=None, numeric_ranges=None):
+def analyze_csv(file_path, numeric_columns=None, date_formats=None, numeric_ranges=None, delimiter=","):
     """Analyze a CSV file and return basic data-quality statistics."""
+    if not isinstance(delimiter, str) or len(delimiter) != 1:
+        raise ValueError("Delimiter must be exactly one character.")
+
     path = Path(file_path)
     numeric_columns = set(numeric_columns or [])
     date_formats = date_formats or {}
     numeric_ranges = numeric_ranges or {}
 
     with path.open("r", newline="", encoding="utf-8-sig") as csv_file:
-        reader = csv.DictReader(csv_file)
+        reader = csv.DictReader(csv_file, delimiter=delimiter)
         if not reader.fieldnames:
             raise ValueError("The CSV file must contain a header row.")
 
@@ -211,6 +214,8 @@ def main():
     parser.add_argument("--range", dest="numeric_ranges", nargs="+", default=[],
                         metavar="COLUMN=MIN:MAX",
                         help="Allowed inclusive numeric range, e.g. age=18:60")
+    parser.add_argument("--delimiter", default=",", metavar="CHAR",
+                        help="Single-character CSV delimiter (default: comma)")
     parser.add_argument("--output", metavar="FILE",
                         help="Optional path to save the report as JSON")
     args = parser.parse_args()
@@ -225,6 +230,7 @@ def main():
             numeric_columns=args.numeric_columns,
             date_formats=date_formats,
             numeric_ranges=numeric_ranges,
+            delimiter=args.delimiter,
         )
         print_report(report)
         if args.output:

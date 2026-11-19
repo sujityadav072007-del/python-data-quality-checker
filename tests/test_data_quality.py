@@ -68,7 +68,7 @@ class TestAnalyzeCsv(unittest.TestCase):
     def test_semicolon_delimited_file(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "sample.csv"
-            path.write_text("name;age\\nAsha;21\\nRavi;22\\n", encoding="utf-8")
+            path.write_text("name;age\nAsha;21\nRavi;22\n", encoding="utf-8")
             report = analyze_csv(path, numeric_columns=["age"], delimiter=";")
             self.assertEqual(report["total_columns"], 2)
             self.assertEqual(report["total_rows"], 2)

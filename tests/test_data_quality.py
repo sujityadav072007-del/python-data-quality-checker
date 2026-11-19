@@ -65,6 +65,21 @@ class TestAnalyzeCsv(unittest.TestCase):
             path = self.write_csv(folder, [["name", "city"], ["Meera", "   "]])
             self.assertEqual(analyze_csv(path)["missing_values"]["city"], 1)
 
+    def test_semicolon_delimited_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "sample.csv"
+            path.write_text("name;age\\nAsha;21\\nRavi;22\\n", encoding="utf-8")
+            report = analyze_csv(path, numeric_columns=["age"], delimiter=";")
+            self.assertEqual(report["total_columns"], 2)
+            self.assertEqual(report["total_rows"], 2)
+            self.assertEqual(report["invalid_numeric_values"], {"age": 0})
+
+    def test_delimiter_must_be_one_character(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self.write_csv(folder, [["name"], ["Asha"]])
+            with self.assertRaisesRegex(ValueError, "exactly one character"):
+                analyze_csv(path, delimiter="||")
+
     def test_header_only_file_has_zero_rows(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self.write_csv(folder, [["name", "age"]])
